@@ -4,70 +4,179 @@
 <meta charset="UTF-8">
 <title>What is my IP?</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
+:root{
+    --bg:#020617;
+    --card:#0f172a;
+    --text:white;
+    --box:#020617;
+}
+.light{
+    --bg:#f1f5f9;
+    --card:white;
+    --text:#020617;
+    --box:#e2e8f0;
+}
 body{
     margin:0;
-    font-family: system-ui, sans-serif;
-    background: linear-gradient(135deg,#0f172a,#020617);
-    color:white;
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,sans-serif;
     display:flex;
-    align-items:center;
     justify-content:center;
-    height:100vh;
+    align-items:center;
+    min-height:100vh;
 }
 .card{
-    background: rgba(255,255,255,0.05);
-    padding:40px;
-    border-radius:16px;
-    text-align:center;
-    backdrop-filter: blur(10px);
-    box-shadow:0 0 30px rgba(0,0,0,0.4);
+    width:90%;
+    max-width:520px;
+    background:var(--card);
+    border-radius:18px;
+    padding:20px;
 }
-h1{margin-bottom:10px;}
-#ip{
-    font-size:2.4rem;
-    font-weight:bold;
-    margin:15px 0;
-    color:#38bdf8;
+h1{text-align:center;}
+.top{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
 }
-small{opacity:0.7;}
 button{
-    margin-top:15px;
-    padding:10px 20px;
     border:none;
     border-radius:8px;
-    background:#38bdf8;
-    color:#020617;
-    font-size:1rem;
+    padding:6px 10px;
     cursor:pointer;
 }
-button:hover{opacity:0.8;}
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+.item{
+    background:var(--box);
+    padding:8px;
+    border-radius:8px;
+    font-size:0.85rem;
+}
+#map{height:200px;border-radius:12px;margin-top:10px;}
+.mainip{
+    text-align:center;
+    font-size:1.8rem;
+    color:#38bdf8;
+    margin:10px 0;
+}
 </style>
 </head>
 <body>
 <div class="card">
-    <h1>What is my IP?</h1>
-    <div id="ip">Loading...</div>
-    <small id="info"></small><br>
-    <button onclick="loadIP()">更新</button>
+<div class="top">
+<button onclick="toggleLang()">🌐</button>
+<button onclick="toggleTheme()">🌙/☀️</button>
 </div>
 
-<script>
-async function loadIP(){
-    document.getElementById("ip").textContent="Loading...";
-    try{
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        document.getElementById("ip").textContent = data.ip;
+<h1 id="title">What is my IP?</h1>
+<div class="mainip" id="mainip">Loading...</div>
+<button onclick="copyIP()" id="copybtn">Copy IP</button>
 
-        const geo = await fetch(`https://ipapi.co/${data.ip}/json/`);
-        const g = await geo.json();
-        document.getElementById("info").textContent =
-            `${g.country_name} / ${g.city} / ${g.org}`;
-    }catch(e){
-        document.getElementById("ip").textContent="Error";
-    }
+<div class="grid">
+<div class="item"><b id="l_ipv4">IPv4</b>: <span id="ipv4"></span></div>
+<div class="item"><b id="l_ipv6">IPv6</b>: <span id="ipv6"></span></div>
+<div class="item"><b id="l_city">City</b>: <span id="city"></span></div>
+<div class="item"><b id="l_region">Region</b>: <span id="region"></span></div>
+<div class="item"><b id="l_postal">Postal</b>: <span id="postal"></span></div>
+<div class="item"><b id="l_country">Country</b>: <span id="country"></span></div>
+<div class="item"><b id="l_isp">ISP</b>: <span id="isp"></span></div>
+<div class="item"><b id="l_asn">ASN</b>: <span id="asn"></span></div>
+<div class="item"><b id="l_tz">Time Zone</b>: <span id="timezone"></span></div>
+</div>
+
+<div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let lang=localStorage.lang||"en";
+let theme=localStorage.theme||"dark";
+
+const dict={
+en:{title:"What is my IP?",copy:"Copy IP",ipv4:"IPv4",ipv6:"IPv6",city:"City",region:"Region",postal:"Postal",country:"Country",isp:"ISP",asn:"ASN",tz:"Time Zone"},
+ja:{title:"あなたのIPアドレス",copy:"IPをコピー",ipv4:"IPv4",ipv6:"IPv6",city:"市",region:"地域",postal:"郵便番号",country:"国",isp:"プロバイダ",asn:"ASN",tz:"タイムゾーン"}
+};
+
+function applyLang(){
+let d=dict[lang];
+title.textContent=d.title;
+copybtn.textContent=d.copy;
+l_ipv4.textContent=d.ipv4;
+l_ipv6.textContent=d.ipv6;
+l_city.textContent=d.city;
+l_region.textContent=d.region;
+l_postal.textContent=d.postal;
+l_country.textContent=d.country;
+l_isp.textContent=d.isp;
+l_asn.textContent=d.asn;
+l_tz.textContent=d.tz;
 }
+
+function toggleLang(){
+lang=lang==="en"?"ja":"en";
+localStorage.lang=lang;
+applyLang();
+}
+
+function toggleTheme(){
+theme=theme==="dark"?"light":"dark";
+localStorage.theme=theme;
+applyTheme();
+}
+
+function applyTheme(){
+document.body.classList.toggle("light",theme==="light");
+}
+
+function copyIP(){
+navigator.clipboard.writeText(mainip.textContent);
+alert(lang==="ja"?"コピーしました":"Copied!");
+}
+
+let map,marker;
+async function loadIP(){
+const v4=await fetch("https://api.ipify.org?format=json").then(r=>r.json());
+ipv4.textContent=v4.ip;
+mainip.textContent=v4.ip;
+
+let v6="N/A";
+try{
+const r6=await fetch("https://api64.ipify.org?format=json");
+v6=(await r6.json()).ip;
+}catch{}
+ipv6.textContent=v6;
+
+const geo=await fetch(`https://ipapi.co/${v4.ip}/json/`).then(r=>r.json());
+city.textContent=geo.city;
+region.textContent=geo.region;
+postal.textContent=geo.postal;
+country.textContent=geo.country_name;
+isp.textContent=geo.org;
+asn.textContent=geo.asn;
+timezone.textContent=geo.timezone;
+
+showMap(geo.latitude,geo.longitude);
+}
+
+function showMap(lat,lon){
+if(!map){
+map=L.map("map").setView([lat,lon],10);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+marker=L.marker([lat,lon]).addTo(map);
+}else{
+map.setView([lat,lon],10);
+marker.setLatLng([lat,lon]);
+}
+}
+
+applyLang();
+applyTheme();
 loadIP();
 </script>
 </body>
