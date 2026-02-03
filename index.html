@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>What is my IP?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+    margin:0;
+    font-family: system-ui, sans-serif;
+    background: linear-gradient(135deg,#0f172a,#020617);
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+}
+.card{
+    background: rgba(255,255,255,0.05);
+    padding:40px;
+    border-radius:16px;
+    text-align:center;
+    backdrop-filter: blur(10px);
+    box-shadow:0 0 30px rgba(0,0,0,0.4);
+}
+h1{margin-bottom:10px;}
+#ip{
+    font-size:2.4rem;
+    font-weight:bold;
+    margin:15px 0;
+    color:#38bdf8;
+}
+small{opacity:0.7;}
+button{
+    margin-top:15px;
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    background:#38bdf8;
+    color:#020617;
+    font-size:1rem;
+    cursor:pointer;
+}
+button:hover{opacity:0.8;}
+</style>
+</head>
+<body>
+<div class="card">
+    <h1>What is my IP?</h1>
+    <div id="ip">Loading...</div>
+    <small id="info"></small><br>
+    <button onclick="loadIP()">更新</button>
+</div>
+
+<script>
+async function loadIP(){
+    document.getElementById("ip").textContent="Loading...";
+    try{
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        document.getElementById("ip").textContent = data.ip;
+
+        const geo = await fetch(`https://ipapi.co/${data.ip}/json/`);
+        const g = await geo.json();
+        document.getElementById("info").textContent =
+            `${g.country_name} / ${g.city} / ${g.org}`;
+    }catch(e){
+        document.getElementById("ip").textContent="Error";
+    }
+}
+loadIP();
+</script>
+</body>
+</html>
